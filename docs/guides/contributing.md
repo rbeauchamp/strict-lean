@@ -53,15 +53,22 @@ checker behavior:
 | `cli` | Command-line behavior and diagnostics. |
 | `environments` | Isolated environments, documentation scanning, and external adopters. |
 | `build-policy` | Enforcement through the example's ordinary Lake build. |
-| `producers` | [Project producer and history qualification](engine-producers.md). |
+| `producers` | [Project producer and documentation qualification](engine-producers.md). |
+| `history` | [Source-bound replacement history qualification](engine-producers.md). |
 | `rule-examples` | [Source-owned corpus and diagnostic demonstrations](rule-examples.md). |
 
-Omitting `PARTITION` requests the `checkerSelftest` campaign; the `producers` and
+Omitting `PARTITION` requests the `checkerSelftest` campaign; the `producers`, `history` and
 `rule-examples` campaigns remain separate explicit selections. Each invocation uses the
 same deadline; choose affected checks rather than treating every campaign as a routine
 prerequisite. Run `./scripts/verify.sh serialized-graph` only for the separate serialized-graph
 claim. See the [verification sequence](../standard/9-compliance-audit.md#repository-verification-sequence)
 for evidence requirements. Diagnostics do not replace a failed acceptance run.
+
+CI requires `producers` followed by `history` as separate sequential invocations, each
+with its own hard420-second limit. This explicitly permits up to840 seconds for their
+combined diagnostics; it is not a pass under the former combined420 contract. Both
+suites retain their full controls and order. Ordinary cold420, corpus and site checks
+remain separate requirements.
 
 
 ## Implementation and qualification layout
@@ -86,8 +93,35 @@ For review, use the repository-local
 the affected claims, retain required checks, and distinguish historical results
 from evidence for the current revision.
 
+## Change an acceptance boundary
+
+Use the [success-owner and API map](policy-acceptance.md) when changing a driver.
+Freeze the request and independently discovered census before result collection;
+reuse `ResultState.collect`, `finalize` and `AcceptedRun` instead of another transition
+or success Boolean. Require accepted evidence in success renderers. Worker packets
+carry raw observations and strict request identity; serialized `acceptance` fields
+are never proof inputs. Keep file, fresh/incremental project, documentation, optional
+graph and classification-only meanings separate. Con-leche's complete indexed assembly
+is credited at this boundary; its proofs are not imported.
+
+Trace the actual theorem-to-execution path and preserve all source/admission guards.
+An axiom census or theorem-statement reference alone does not establish semantic linkage.
+Collection proofs establish universal finite-data guarantees; public positive/refusal/
+restored controls qualify the IO boundary. Record commands, exact relevant input identity,
+failed attempts and pending gates in the issue evidence rather than inferring coverage
+from a few mutations or a worker exit.
+
 ## Linter and website development
 
 Follow the [architecture](linter-architecture.md), [comparative design decisions](ecosystem-design.md), [developer experience](developer-experience.md) and [coverage map](rule-coverage.md). A rule change updates its descriptor, actual detector, source fixtures, expected typed diagnostics and explanatory page together. Follow the [attribution scope](design-influences.md): preserve actual code/license notices and cite relevant component-level design influences; examples such as CA1416, Ruff and Pyrefly are not exclusive design mandates. Never replace semantic review with docstring presence or generated-page counts.
 
 The [prototype README](../../examples/rule-reference-prototype/README.md) specifies separate pinned website setup and `lake env lean --run examples/rule-reference-prototype/Run.lean`. This bounded integration check complements the unchanged 420-second acceptance command. Review workflow must inspect rule IDs, exact scopes/modes, source ranges, versioned help routes and generated-source agreement where affected; no extra mandatory benchmark campaign is introduced.
+
+The acceptance transport groups are maintained, capability-triggered diagnostics. Run
+all affected groups when worker dispatch, codecs, joins, request reconstruction or
+terminal output ownership changes. Their positive/refusal/restoration observations
+qualify those IO boundaries; `collect_success_iff` and `finalize_iff` already quantify
+universally over supplied finite observations. Do not add the multi-minute groups to
+every ordinary acceptance run. Existing CI builds transitively check all proof and
+adapter modules; the required CI diagnostics and budgets are described above.
+After fixes, reuse a diagnostic only with an explicit unchanged-relevant-input argument.

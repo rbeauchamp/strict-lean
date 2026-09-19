@@ -1,8 +1,14 @@
 # Lean qualification tooling
 
-Project-owned implementation is Lean 4. The language policy lives in `AGENTS.md`, not
-in the universal standard. All twelve former Python entrypoints have Lean replacements;
-no Python interpreter is needed by repository acceptance, diagnostics, or the prototype.
+Project-owned implementation follows the Lean 4 policy in `AGENTS.md`, not
+in the universal standard. The sixteen former Python entrypoints listed below have Lean
+replacements; ordinary acceptance, the producer/history/corpus CI campaigns, and the
+prototype do not need a Python interpreter. The four remaining acceptance, snapshot,
+documentation-dependency and input-inventory drivers were retired after their native
+controls passed. The [earlier receipt](../../session/evidence/ci-environment-census.md)
+and [completion receipt](../../session/evidence/ci-role-retention.md) retain the
+control mapping, runtime results, failed attempts and evidence-reuse boundaries.
+Historical implementations remain in Git history; use the Lean commands below.
 The prototype's project-owned JavaScript widget was also removed. External Lean, Lake,
 Verso, runtime libraries and generated browser assets remain external dependencies, not
 claims of a wholly Lean or formally verified toolchain.
@@ -29,10 +35,15 @@ Conversely, passing these controls never proves arbitrary compiler or OS behavio
 | `native_launcher_diagnostic.py` | `lake exe qualify native-launcher` | 36 paired baseline/cached-environment controls; exact source, argv, outputs and in-memory environment/executable equality. |
 | `rule_example_checks.py` | `lake exe qualify rule-examples --evidence PATH` | Sixty source-owned phases for twenty rules, plus admission mutations and authentic wrong-claim/classification controls. |
 | prototype `run.py` | `lake env lean --run examples/rule-reference-prototype/Run.lean` | Separately pinned Verso integration, native messages, Lake dependency dispatch and identical-output comparison. |
+| `acceptance_checks.py` | `lake exe qualify acceptance GROUP --evidence PATH` | Surface/evidence/fence packet mutations, source request binding, worker failure and timeout, with positive restoration. Groups: `surface`, `evidence`, `fences`, `sources`, `process`. |
+| `acceptance_snapshot_checks.py` | `lake exe qualify acceptance-snapshots dependencies` and `lake exe qualify acceptance-snapshots history` | Ignored Git/non-Git dependency input coverage and mutation; SL3001 fresh/incremental/build-lint history refusal and restoration. `all` runs both under one deadline. |
+| `documentation_dependency_checks.py` | `lake exe qualify documentation-dependencies` | Both documentation commands retain pre-build dependency observations; combined project/documentation positive remains distinct. |
+| `input_inventory_checks.py` | `lake exe qualify input-inventory` | Root additions and Markdown edit/removal during prerequisite build; actual new-module build and restored fresh controls. |
 
 The producer command retains `--evidence PATH`. `scripts/verify.sh` runs registry and native
-controls; `scripts/verify.sh diagnostics producers` runs both producer and history campaigns.
-Both invocations retain their separate hard 420-second deadlines. Direct `lake exe qualify`
+controls; `scripts/verify.sh diagnostics producers` and `scripts/verify.sh diagnostics history`
+run the producer and history campaigns separately and sequentially in CI.
+Each invocation retains its own hard 420-second deadline. Direct `lake exe qualify`
 campaigns have a single 420-second process-group deadline; the prototype has a single
 600-second process-group deadline. These replace the old per-child timers, which cannot
 safely enforce descendant termination while sharing acceptance's outer process group.
@@ -41,6 +52,20 @@ upstream corpus selection; optional `--rules RULE ...` follows `--evidence PATH`
 standalone command and never claims full-corpus coverage. The corpus runner retains at
 most two disjoint detector processes, consumes records in fixed order, and drains launched
 tasks before ordinary/exceptional scratch cleanup. Partial exports remain `INCOMPLETE`.
+Corpus records use a qualification-only view: top-level `acceptance` and
+`documentationAcceptance` payloads become null, while every key, required nested value
+and raw-tree shape remains unchanged. Exact detector bytes remain in
+`PATH.raw/ATTEMPT/RULE/PHASE/result.json`, with registered command/request/snapshots,
+stream files, terminal metadata and the compact original record. Derived admission
+mutations retain their exact submitted record, origin path and mutation label before
+admission under the original phase's `controls/` directory. During production the
+INCOMPLETE receipt points to these sidecars; the full aggregate is written once all
+records and controls are ready. The runner verifies the retained files,
+SHA256/length binding and terminal checker sources before exporting PASS. Missing or
+changed sidecars refuse completion; kill paths retain INCOMPLETE and partial files.
+PASS is written only after successful scratch cleanup.
+Stream retention on kill covers completed lines already read; an unterminated line
+can remain buffered. Only terminal observations claim complete streams.
 The former launcher's separate 180-second diagnostic timer is replaced by the same
 single 420-second public qualification boundary; no timing result is a future bound.
 
@@ -108,6 +133,14 @@ by their source-level linkage. The proof is erased at execution.
   only entire matching string values change. Unmatched strings stay unchanged. Depth
   exhaustion explicitly refuses; the corpus uses a 64-level budget. Semantic module
   discovery for checker snapshots uses Lake's elaborated inventory, not a source glob.
+- `Checker.RuleExampleProjection.qualify_record` and its mutation/checker-source
+  variants prove exact `Except String Unit` equality for arbitrary producer JSON at
+  the adapter's canonical record constructor. `qualifyCorpus_records` extends this
+  to the unchanged full corpus qualifier, including ordered scans, completeness and
+  first refusals. `withoutSourceAccount_view` covers the existing missing-source
+  control. Structural raw-tree laws avoid assuming parser well-formedness. These
+  separately checked operational-module proofs do not authenticate parsing,
+  duplicate-key handling, serialization, hashes, filesystem custody or subprocesses.
 - `Website.hasFence_exact`: the fence guard detects exactly a contiguous triple backtick
   in the input character list. `checkedBlock` specifies refusal or exact LF-normalized
   text wrapping. `checkedPage` admits exactly fence-free SL1001 inputs and returns a
@@ -139,6 +172,21 @@ to `qualify` so it does not detach a nested timer/group. That private flag is no
 standalone invocation or an alternative acceptance command. `TimeoutControl.lean` separately
 exercises positive, descendant timeout, terminated-descendant and restored controls.
 These observations are not an OS scheduling theorem.
+
+The acceptance `process` group additionally terminates a single native sleeper
+inside a surface worker using a foreground timer. It checks actual worker
+termination and the coordinator's incomplete/no-acceptance response. It does not
+establish whole-coordinator cancellation; `TimeoutControl` retains the separate
+process-group descendant controls. No nested timer creates an escaping group.
+
+`lake exe qualify receipt-boundaries` seeds completed evidence and exercises
+actual missing/unusable timeout selection and selected-timer spawn failures for
+both `acceptance` and `environments`. Each public invocation replaces the old
+receipt with a fresh incomplete attempt before those fallible operations. The
+timed child carries the same attempt, and adds no new deadline. Acceptance keeps
+existing raw result/trace sidecars before parsing and records partial file
+locations on the active case; completed command records contain executable plus
+argv. These are diagnostic receipt guarantees under trusted filesystem/process IO.
 
 The operator approved a narrow exception for the existing CI bootstrap to install pinned
 Elan/Lean and required system tools before Lean is available, expose their paths, and

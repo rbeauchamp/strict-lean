@@ -49,6 +49,7 @@ unsafe def run (args : List String) : IO UInt32 := do
     | some dir => findRepoRoot dir
     | none => repoRoot
   let docsRoot := options.docsRoot.map (resolve repo) |>.getD (repo / "docs")
+  let documents ← Documentation.captureMarkdown docsRoot
   withScratch repo "doc-fence-audit" fun scratch => do
     let copy := scratch / "project"
     copyProject repo copy scratch
@@ -58,9 +59,10 @@ unsafe def run (args : List String) : IO UInt32 := do
       let manifest ← Manifest.load manifestPath
       let inventory ← Lake.surfaceInventory copy
       let sources ← SourceBinding.capture inventory.moduleSources
+      let dependencies ← Snapshot.dependencies inventory
       SourceBinding.withUnchanged sources configuration do
         SourceBinding.configurationUnchanged configuration
-        let buildResult ← Lake.buildChecked copy (Manifest.positiveTargets manifest) "fresh"
+        let (buildProcess, buildResult) ← Lake.buildCheckedObservation copy (Manifest.positiveTargets manifest) "fresh"
         SourceBinding.unchanged sources
         SourceBinding.configurationUnchanged configuration
         if let some lines := buildResult then
@@ -68,7 +70,7 @@ unsafe def run (args : List String) : IO UInt32 := do
           return 1
         IO.println "claimed surface built fresh; compiling fences"
         (← IO.getStdout).flush
-        Documentation.auditBuiltProject copy docsRoot inventory sources configuration options.jobs options.verbose
+        Documentation.auditBuiltProject copy docsRoot inventory sources configuration dependencies documents (Acceptance.buildObservation buildProcess) options.jobs options.verbose
     let outcome := outcome.bind id
     match outcome with
     | .ok result => return result

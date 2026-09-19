@@ -9,7 +9,7 @@ namespace StrictLeanVerification
 
 /-- Closed vocabulary of supported verification invocations. -/
 inductive Mode where
-  | ordinary | graph | diagnostics | fixtures | structural | cli | environments | buildPolicy | producers | ruleExamples
+  | ordinary | graph | diagnostics | fixtures | structural | cli | environments | buildPolicy | producers | history | ruleExamples
   deriving DecidableEq
 
 /-- Exactly the documented arguments for each mode, with no ignored trailing arguments. -/
@@ -23,11 +23,12 @@ def arguments : Mode → List String
   | .environments => ["diagnostics", "environments"]
   | .buildPolicy => ["diagnostics", "build-policy"]
   | .producers => ["diagnostics", "producers"]
+  | .history => ["diagnostics", "history"]
   | .ruleExamples => ["diagnostics", "rule-examples"]
 
 /-- Every supported mode occurs once; the parser searches only this closed vocabulary. -/
 def modes : List Mode := [.ordinary, .graph, .diagnostics, .fixtures, .structural,
-  .cli, .environments, .buildPolicy, .producers, .ruleExamples]
+  .cli, .environments, .buildPolicy, .producers, .history, .ruleExamples]
 
 /-- Argument parsing never accepts a prefix of a supported invocation. -/
 def parseMode (args : List String) : Option Mode :=
@@ -69,15 +70,18 @@ def commands : Mode → List Command
         "+StrictLean.Checker.CheckerSelftest:olean", "+StrictLean.Checker.FreshChecker:olean",
         "+StrictLean.RegistryChecks:olean", "+StrictLean.Linter:olean",
         "+StrictLean.Checker.ProducerQualification:olean", "+StrictLean.Checker.HistoryQualification:olean",
-        "+StrictLean.Checker.RuleExamples:olean", "+StrictLean.Checker.RuleExampleQualification:olean"],
+        "+StrictLean.Checker.RuleExamples:olean", "+StrictLean.Checker.RuleExampleQualificationMain:olean"],
       lake #["env", "lean", "--run", "lean/StrictLean/RegistryChecks.lean"],
       lake #["exe", "qualify", "--under-deadline", "combined"],
       lake #["exe", "axiomGate", "--with-docs", "--legacy-json-out", "tmp/axiom-report.json"]]
   | .graph => [lake #["exe", "freshChecker", "--verbose"]]
   | .diagnostics => [lake #["exe", "checkerSelftest", "--build-bound", "--jobs", "4"]]
   | .producers => [
-      lake #["build", "axiomGate", "qualify", "+StrictLean.Checker.ProducerQualification:olean", "+StrictLean.Checker.HistoryQualification:olean"],
-      lake #["exe", "qualify", "--under-deadline", "producers-combined"]]
+      lake #["build", "axiomGate", "qualify", "+StrictLean.Checker.ProducerQualification:olean"],
+      lake #["exe", "qualify", "--under-deadline", "producers"]]
+  | .history => [
+      lake #["build", "axiomGate", "qualify", "+StrictLean.Checker.HistoryQualification:olean"],
+      lake #["exe", "qualify", "--under-deadline", "history"]]
   | .ruleExamples => [
       lake #["build", "axiomGate", "ruleExamples", "ruleExampleQualification", "qualify"],
       lake #["exe", "qualify", "--under-deadline", "rule-examples", "--evidence", "tmp/rule-examples.json"]]
@@ -100,7 +104,12 @@ def execute (command : Command) : IO Unit := do
 /-- Cold-start driver; all builds and checks stay within the inherited outer deadline. -/
 def run (args : List String) : IO Unit := do
   let some selection := select args
-    | throw <| IO.userError "usage: scripts/verify.sh [serialized-graph | diagnostics [fixtures|structural|cli|environments|build-policy|producers|rule-examples]]"
+    | throw <| IO.userError "usage: scripts/verify.sh [serialized-graph | diagnostics [fixtures|structural|cli|environments|build-policy|producers|history|rule-examples]]"
+  if selection.val == .ruleExamples then
+    -- This toolchain-only driver runs before building the corpus adapter. Invalidate
+    -- an earlier PASS even if build/setup fails before that adapter can start.
+    IO.FS.createDirAll "tmp"
+    IO.FS.writeFile "tmp/rule-examples.json" "{\"outcome\":\"INCOMPLETE\",\"phase\":\"setup\"}\n"
   for command in [Command.mk "git" #["diff", "--check"],
       Command.mk "git" #["diff", "--cached", "--check"],
       Command.mk "shellcheck" #["scripts/verify.sh"]] ++ commands selection.val do
