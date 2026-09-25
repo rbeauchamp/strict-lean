@@ -1,0 +1,1 @@
+window.docContents[176].resolve({"/rules/PL1001/#PL1001-example":{"contents":"\n\nThe correction proves the same ∀ n : Nat, n = n by rfl instead of assuming it, under the unchanged Kernel-only claim.\n\n","context":"Plumb for Lean rule reference\u0009Rule index\u0009PL1001: Project logical axioms are forbidden","header":"Checked example","id":"/rules/PL1001/#PL1001-example"}});
